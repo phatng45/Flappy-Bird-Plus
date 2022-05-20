@@ -6,28 +6,75 @@ public class GameManager : MonoBehaviour {
     public static GameManager Instance;
     private       int         level = 1;
 
+    float[] xSpikeRange = { -2.87f, 2.84f };
+    float[] ySpikeRange = { 3.77f, 3.037f, 2.304f, 1.571f, 0.838f, 0.105f, -0.628f, -1.361f, -2.094f, -2.827f, -3.56f };
+
+    // WIDER SPIKES, MAKE 1 HOLE GAP EASIER TO GET THROUGH BUT HARDER EVERYWHERE ELSE
+    //float[] ySpikeRange = { 3.77f, 3.037f, 1.77f, 0.77f, -0.77f, -1.77f, -2.77f, -3.77f };
+
+    float[] xSawRange = { -3.1f, 3.07f };
+
+
     void Awake() {
         Instance = this;
     }
 
-    [SerializeField] private GameObject  player, spike, star, saw, mace;
+    [SerializeField] private GameObject  player,    spike, star, saw, mace;
     [SerializeField] private AudioSource loseSound, winSound;
-    
+
     // FOR DIFFICULTY SETTINGS
-    private int
-        _minSpikes = 2,
-        _maxSpikes = 5,
-        _minSaws   = 0,
-        _maxSaws   = 1,
-        _minMaces  = 0,
-        _maxMaces  = 1;
+    private int[]
+        _minSpikes,
+        _maxSpikes,
+        _minSaws,
+        _maxSaws,
+        _minMaces,
+        _maxMaces;
+
+    private bool isCasual = false;
+
+    private readonly int[]
+        _minSpikesCasual   = { 0, 2, 3, 4, 4, 8, 5, 5, 5, 7, 10 },
+        _maxSpikesCasual   = { 0, 5, 6, 7, 9, 16, 11, 11, 11, 13, 16 },
+        _minSawsCasual     = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        _maxSawsCasual     = { 0, 0, 1, 1, 1, 0, 1, 1, 2, 2, 2 },
+        _minMacesCasual    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        _maxMacesCasual    = { 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1 },
+        _minSpikesHardcore = { 0, 15, 16, 20, 16, 25, 20, 22, 22, 22, 22 },
+        _maxSpikesHardcore = { 0, 15, 16, 20, 16, 25, 20, 22, 22, 22, 22 },
+        _minSawsHardcore   = { 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1 },
+        _maxSawsHardcore   = { 0, 0, 1, 0, 1, 0, 2, 2, 3, 3, 5 },
+        _minMacesHardcore  = { 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0 },
+        _maxMacesHardcore  = { 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1 };
 
     public GameState State;
     public static event Action<GameState> onGameStateChanged;
 
     private void Start() {
+        SwapDifficulty();
         UpdateGameState(GameState.MainScreen);
     }
+
+    public void SwapDifficulty() {
+        isCasual = !isCasual;
+        if (isCasual) {
+            _minSpikes = _minSpikesCasual;
+            _maxSpikes = _maxSpikesCasual;
+            _minSaws   = _minSawsCasual;
+            _maxSaws   = _maxSawsCasual;
+            _minMaces  = _minMacesCasual;
+            _maxMaces  = _maxMacesCasual;
+        }
+        else {
+            _minSpikes = _minSpikesHardcore;
+            _maxSpikes = _maxSpikesHardcore;
+            _minSaws   = _minSawsHardcore;
+            _maxSaws   = _maxSawsHardcore;
+            _minMaces  = _minMacesHardcore;
+            _maxMaces  = _maxMacesHardcore;
+        }
+    }
+
 
     public void UpdateGameState(GameState newState) {
         State = newState;
@@ -63,25 +110,20 @@ public class GameManager : MonoBehaviour {
     private void Init() {
         // SPAWN OBSTACLES HERE
         player.SetActive(true);
-        player.transform.position = Vector3.zero;
 
-        int numberOfSpikes = Random.Range(_minSpikes, _maxSpikes + 1);
-        int numberOfSaws   = Random.Range(_minSaws, _maxSaws + 1);
-        int numberOfMaces  = Random.Range(_minMaces, _maxMaces + 1);
+        int numberOfSpikes = Random.Range(_minSpikes[level], _maxSpikes[level] + 1);
+        int numberOfSaws   = Random.Range(_minSaws[level], _maxSaws[level] + 1);
+        int numberOfMaces  = Random.Range(_minMaces[level], _maxMaces[level] + 1);
 
         // SPAWN SPIKES
-        float[] xSpikeRange = { -2.87f, 2.84f };
-        float[] ySpikeRange = { 3.77f, 2.77f, 1.77f, 0.77f, -0.77f, -1.77f, -2.77f, -3.77f };
-
         for (int i = 0; i < numberOfSpikes; ++i) {
             float x        = xSpikeRange[Random.Range(0, 2)];
             float rotation = x == -2.87f ? -90f : 90f;
             float y        = ySpikeRange[Random.Range(0, 8)];
             Instantiate(spike, new Vector2(x, y), transform.rotation * Quaternion.Euler(0f, 0, rotation));
         }
-        
+
         // SPAWN SAWS
-        float[] xSawRange = { -3.1f, 3.07f };
         switch (numberOfSaws) {
             case 1:
                 Instantiate(saw, new Vector2(xSawRange[Random.Range(0, 2)], Random.Range(-3.6f, 3.6f)),
@@ -98,10 +140,10 @@ public class GameManager : MonoBehaviour {
             Instantiate(mace, new Vector2(Random.Range(-2.09f, 2.13f), 5.38f),
                 transform.rotation * Quaternion.Euler(0f, 0, Random.Range(-10f, 10f)));
         }
-        
+
         // SPAWN STARS
         for (int i = 0; i < 3; ++i) {
-            var starPosition = new Vector2(Random.Range(-2.48f, 2.45f), Random.Range(3.77f, -3.77f));
+            var starPosition = new Vector2(Random.Range(-2.33f, 2.3f), Random.Range(3.77f, -3.77f));
             Instantiate(star, starPosition, Quaternion.identity);
         }
     }
@@ -124,57 +166,19 @@ public class GameManager : MonoBehaviour {
     public void IncreaseLevel() {
         level++;
 
-        switch (level) {
-            case 2:
-                _minSpikes = 3;
-                _maxSpikes = 6;
-                _maxSaws   = 2;
-                break;
-            case 3:
-                _minSpikes = 4;
-                _maxSpikes = 7;
-                break;
-            case 4:
-                _minSpikes = 4;
-                _maxSpikes = 9;
-                _maxMaces  = 2;
-                break;
-            case 5:
-                _minSpikes = 5;
-                _maxSpikes = 11;
-                _minSaws   = 1;
-                break;
-            case 7:
-                _maxSpikes = 11;
-                _minMaces  = 1;
-                break;
-            case 9:
-                _minSpikes = 7;
-                _maxSpikes = 13;
-                break;
-            case 10:
-                _minSpikes = 10;
-                _maxSpikes = 16;
-                break;
 
-            // AT LEVEL 10:
-            // minSpikes = 10;
-            // maxSpikes = 16;
-            // minSaws = 1;
-            // maxSaws = 2;
-            // minMaces = 1;
-            // maxMaces = 2;
-        }
+        // AT LEVEL 10:
+        // minSpikes = 10;
+        // maxSpikes = 16;
+        // minSaws = 1;
+        // maxSaws = 2;
+        // minMaces = 1;
+        // maxMaces = 2;
     }
 
+
     public void ResetLevel() {
-        level      = 1;
-        _minSpikes = 2;
-        _maxSpikes = 5;
-        _minSaws   = 0;
-        _maxSaws   = 1;
-        _minMaces  = 0;
-        _maxMaces  = 1;
+        level = 1;
     }
 }
 

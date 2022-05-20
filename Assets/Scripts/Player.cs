@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -10,6 +11,22 @@ public class Player : MonoBehaviour {
     private bool        hitRightWall = false;
     private  int         score;
 
+    private void Awake() {
+        GameManager.onGameStateChanged += GameManagerOnGameStateChanged;
+    }
+
+    private void OnDestroy() {
+        GameManager.onGameStateChanged -= GameManagerOnGameStateChanged;
+    }
+
+    private void GameManagerOnGameStateChanged(GameState state) {
+        if (state == GameState.Play) {
+            transform.position   = Vector3.zero;
+            hitRightWall         = false;
+            transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+        }
+    }
+
     void Start() {
         rb    = GetComponent<Rigidbody2D>();
         score = 0;
@@ -21,7 +38,7 @@ public class Player : MonoBehaviour {
         else
             transform.Translate(Vector3.left * (3 * Time.deltaTime));
 
-        if (Input.GetMouseButtonDown(0)) {
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space)) {
             jumpSound.Play();
             rb.velocity = new Vector2(0, 5);
             StartCoroutine(WaitForAnimation());

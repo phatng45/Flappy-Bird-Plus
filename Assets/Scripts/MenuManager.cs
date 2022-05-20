@@ -2,10 +2,10 @@ using TMPro;
 using UnityEngine;
 
 public class MenuManager : MonoBehaviour {
-    [SerializeField] private GameObject      LosePanel, WinPanel, MenuPanel;
+    [SerializeField] private GameObject      
+        LosePanel, WinPanel, MenuPanel, CasualDiff, HardcoreDiff, warningText, xdText;
     [SerializeField] private TextMeshProUGUI LoseLevel, WinLevel;
     [SerializeField] private AudioSource     btnClickedSound;
-    
     
     public static            MenuManager Instance;
     
@@ -56,5 +56,14 @@ public class MenuManager : MonoBehaviour {
     
     public void onExitPressed() {
         Application.Quit();
+    }
+
+    public void onDifficultyPressed() {
+        btnClickedSound.Play();
+        GameManager.Instance.SwapDifficulty();
+        CasualDiff.SetActive(!CasualDiff.activeSelf);
+        HardcoreDiff.SetActive(!HardcoreDiff.activeSelf);
+        warningText.SetActive(!warningText.activeSelf);
+        xdText.SetActive(!warningText.activeSelf);
     }
 }
