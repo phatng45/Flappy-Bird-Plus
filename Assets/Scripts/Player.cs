@@ -1,15 +1,15 @@
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player : MonoBehaviour {
-    [SerializeField] private GameObject flyAnimation;
-    [SerializeField] private AudioSource jumpSound, starCollectedSound;
+    [SerializeField] private GameObject  flyAnimation, waitingRoom;
+    [SerializeField] private AudioSource jumpSound,    starCollectedSound;
 
     private Rigidbody2D rb;
-    public  Transform   pos;
-    private bool        hitRightWall = false;
-    private  int         score;
+    private bool        hitRightWall = false, canMove = false;
+    private int         score;
 
     private void Awake() {
         GameManager.onGameStateChanged += GameManagerOnGameStateChanged;
@@ -21,9 +21,13 @@ public class Player : MonoBehaviour {
 
     private void GameManagerOnGameStateChanged(GameState state) {
         if (state == GameState.Play) {
-            transform.position   = Vector3.zero;
-            hitRightWall         = false;
-            transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+            transform.position = Vector3.zero;
+            hitRightWall       = false;
+            canMove            = false;
+            waitingRoom.SetActive(true);
+            waitingRoom.GetComponent<SpriteRenderer>().color = new Color(.9058f, .9058f, .9058f, 1);
+            GetComponent<Rigidbody2D>().gravityScale         = 0.0f;
+            transform.localScale                             = new Vector3(.5f, .5f, .5f);
         }
     }
 
@@ -33,12 +37,20 @@ public class Player : MonoBehaviour {
     }
 
     void Update() {
-        if (!hitRightWall)
-            transform.Translate(Vector3.right * (3 * Time.deltaTime));
-        else
-            transform.Translate(Vector3.left * (3 * Time.deltaTime));
+        if (canMove) {
+            if (!hitRightWall)
+                transform.Translate(Vector3.right * (3 * Time.deltaTime));
+            else
+                transform.Translate(Vector3.left * (3 * Time.deltaTime));
+        }
 
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space)) {
+            if (!canMove) {
+                canMove                                  = true;
+                GetComponent<Rigidbody2D>().gravityScale = 1.0f;
+                StartCoroutine(FadeCircle());
+            }
+
             jumpSound.Play();
             rb.velocity = new Vector2(0, 5);
             StartCoroutine(WaitForAnimation());
@@ -48,12 +60,12 @@ public class Player : MonoBehaviour {
     private void OnTriggerEnter2D(Collider2D collision) {
         if (collision.CompareTag("RightWall")) {
             hitRightWall         = true;
-            transform.localScale = new Vector3(-0.6f, 0.6f, 0.6f);
+            transform.localScale = new Vector3(-.5f, .5f, .5f);
         }
 
         if (collision.CompareTag("LeftWall")) {
             hitRightWall         = false;
-            transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+            transform.localScale = new Vector3(.5f, .5f, .5f);
         }
 
         if (collision.CompareTag("Obstacle") || collision.CompareTag("Spike")) {
@@ -76,5 +88,15 @@ public class Player : MonoBehaviour {
         flyAnimation.SetActive(true);
         yield return new WaitForSeconds(.4f);
         flyAnimation.SetActive(false);
+    }
+
+    IEnumerator FadeCircle() {
+        var   waitingRoomRenderer = waitingRoom.GetComponent<SpriteRenderer>();
+        float alpha               = 1;
+        for (float t = 0.0f; t < 1.0f; t += Time.deltaTime * 1.5f) {
+            Color newColor = new Color(.9058f, .9058f, .9058f, Mathf.Lerp(alpha, 0, t));
+            waitingRoomRenderer.color = newColor;
+            yield return null;
+        }
     }
 }

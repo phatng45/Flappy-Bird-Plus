@@ -111,15 +111,17 @@ public class GameManager : MonoBehaviour {
         // SPAWN OBSTACLES HERE
         player.SetActive(true);
 
-        int numberOfSpikes = Random.Range(_minSpikes[level], _maxSpikes[level] + 1);
-        int numberOfSaws   = Random.Range(_minSaws[level], _maxSaws[level] + 1);
-        int numberOfMaces  = Random.Range(_minMaces[level], _maxMaces[level] + 1);
+        var scale = level < 10 ? level : 10;
+
+        int numberOfSpikes = Random.Range(_minSpikes[scale], _maxSpikes[scale] + 1);
+        int numberOfSaws   = Random.Range(_minSaws[scale], _maxSaws[scale] + 1);
+        int numberOfMaces  = Random.Range(_minMaces[scale], _maxMaces[scale] + 1);
 
         // SPAWN SPIKES
         for (int i = 0; i < numberOfSpikes; ++i) {
             float x        = xSpikeRange[Random.Range(0, 2)];
             float rotation = x == -2.87f ? -90f : 90f;
-            float y        = ySpikeRange[Random.Range(0, 8)];
+            float y        = ySpikeRange[Random.Range(0, ySpikeRange.Length)];
             Instantiate(spike, new Vector2(x, y), transform.rotation * Quaternion.Euler(0f, 0, rotation));
         }
 
